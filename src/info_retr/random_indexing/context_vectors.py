@@ -40,4 +40,6 @@ def build_context_vectors(
       per-occurrence frequency is wanted)
     - return {term: context_vector}
     """
+    
+    
     raise NotImplementedError
