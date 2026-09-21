@@ -9,16 +9,13 @@ Scaffold only -- every function raises `NotImplementedError`. Fill in per
 1. `config.py` -- fixed hyperparameters (`DIMENSIONS`, `NUM_NONZEROS`, `SEED`).
 2. `index_vectors.py` -- one sparse random ternary vector per Cranfield document.
 3. `context_vectors.py` -- accumulate index vectors into one dense vector per term.
-4. `composition.py` -- combine term vectors into query/phrase vectors
-   (additive baseline, then multiplicative and dilation per Mitchell & Lapata 2010).
-5. `retrieval.py` -- cosine similarity, term-neighbour lookup, document ranking.
-6. `evaluate.py` -- compare against Assignment 1's TF-IDF/inverted-index baselines.
+4. `retrieval.py` -- cosine similarity, term-neighbour lookup, document ranking.
+5. `evaluate.py` -- compare against Assignment 1's TF-IDF/inverted-index baselines.
 
 ## Sources
 
 - Sahlgren, M. (2005). *An Introduction to Random Indexing.*
 - Kanerva, P., Kristofersson, J., & Holst, A. (2000). *Random Indexing of text samples for LSA.*
-- Mitchell, J., & Lapata, M. (2010). *Composition in Distributional Models of Semantics.* Cognitive Science 34.
 - Achlioptas, D. (2001). *Database-friendly random projections.*
 
 ## Open question (not scaffolded)

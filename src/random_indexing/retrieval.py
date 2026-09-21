@@ -39,7 +39,7 @@ def build_document_vectors(
 
     TODO:
     - for each document, gather its terms' context vectors
-    - compose them via composition.compose_query (or a doc-specific variant)
+    - compose them via compositional_vector_model.composition.compose_query
     - return {doc_id: document_vector}
     """
     raise NotImplementedError
@@ -55,7 +55,8 @@ def ri_retrieve(
 
     TODO:
     - tokenize `query` (reuse Assignment 1's tokenizer)
-    - compose the query's term vectors via composition.compose_query
+    - compose the query's term vectors via
+      compositional_vector_model.composition.compose_query
     - score every document by cosine_similarity(query_vector, doc_vector)
     - return (doc_id, score) sorted by score descending, mirroring the
       shape of Assignment 1's tfidf_retrieve for easy comparison
