@@ -1,8 +1,8 @@
 # Random Indexing
 
-Scaffold only -- every function raises `NotImplementedError`. Fill in per
-`../../Assignment1/assignment1_tdt4117.ipynb` (reuse `docs`, `tokenize`,
-`inverted_index`, and the TF-IDF vectors as the comparison baseline).
+Scaffold only -- every function raises `NotImplementedError`. Fill in and
+reuse `docs`, `tokenize`, `inverted_index`, and the TF-IDF vectors from
+`../baseline` (port of Assignment 1) as the comparison baseline.
 
 ## Build order
 
@@ -14,9 +14,9 @@ Scaffold only -- every function raises `NotImplementedError`. Fill in per
 
 ## Sources
 
-- Sahlgren, M. (2005). *An Introduction to Random Indexing.*
-- Kanerva, P., Kristofersson, J., & Holst, A. (2000). *Random Indexing of text samples for LSA.*
-- Achlioptas, D. (2001). *Database-friendly random projections.*
+- Sahlgren, M. (2005). _An Introduction to Random Indexing._
+- Kanerva, P., Kristofersson, J., & Holst, A. (2000). _Random Indexing of text samples for LSA._
+- Achlioptas, D. (2001). _Database-friendly random projections._
 
 ## Open question (not scaffolded)
 

@@ -7,10 +7,9 @@ Reference: Sahlgren (2005) section 3, the core RI algorithm:
             context_vector[t] += index_vector[D]
 
 This is a single streaming pass -- no full term-document matrix is ever
-materialized, unlike LSA. Term weighting (TF, IDF) can be folded into the
-accumulation step; see the TODO below and Assignment 1's TF-IDF cells
-(src/../Assignment1/assignment1_tdt4117.ipynb, cells 16-20) for weights
-already available to reuse.
+materialized, unlike LSA. Term weighting (TF, IDF) is folded into the
+accumulation step via the optional `tfidf_matrix` argument (built by
+`baseline.tfidf.build_tfidf_matrix`).
 """
 
 from __future__ import annotations
@@ -23,22 +22,34 @@ def build_context_vectors(
     index_vectors: dict[int, np.ndarray],
     dim: int,
     weighted: bool = False,
+    tfidf_matrix: dict[int, dict[str, float]] | None = None
 ) -> dict[str, np.ndarray]:
     """Accumulate one context vector per unique term across the corpus.
 
     `docs` follows the Assignment 1 shape: {doc_id: {"terms": [...], ...}}.
 
-    TODO:
-    - initialize a zero vector of length `dim` per unique term
-    - for each document, for each term occurrence, add that document's
-      index vector to the term's context vector
-    - if `weighted` is True, scale the contribution by a term weight
-      (e.g. raw tf, or idf from Assignment 1) instead of adding it unweighted
-    - decide here whether repeated terms in a doc should add index_vector
-      once per occurrence, or once per document (note: Assignment 1's
-      tokenizer currently dedupes terms per doc into a set -- revisit if
-      per-occurrence frequency is wanted)
     - return {term: context_vector}
     """
 
-    raise NotImplementedError
+    context_vectors = {}
+    for doc in docs:
+        inner_dict = docs[doc]
+        terms = inner_dict["terms"]
+
+        for term in terms:
+            count = 0
+
+            if count == 1:
+                continue
+
+            if term not in context_vectors:
+                context_vectors[term] = np.zeros(shape=dim, dtype=np.float32)
+
+            if weighted == True and tfidf_matrix is not None:
+                term_tf_idf = tfidf_matrix.get(doc, {}).get(term, 0.0)
+                context_vectors[term] += index_vectors[doc] * term_tf_idf
+
+            else:
+                context_vectors[term] += index_vectors[doc]
+
+    return context_vectors

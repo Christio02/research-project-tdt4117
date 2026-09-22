@@ -5,9 +5,6 @@ order of thousands, k a small number of non-zeros. Mitchell & Lapata (2010)
 use dense d=2048 Gaussian vectors for their own space; we use the sparse
 ternary variant (Achlioptas, 2001) instead, so only DIMENSIONS is shared
 ground with their setup.
-
-TODO: tune DIMENSIONS / NUM_NONZEROS once retrieval quality can be measured
-against the Assignment 1 TF-IDF baseline (see random_indexing/evaluate.py).
 """
 
 # Dimensionality of index vectors and context (term) vectors.

@@ -11,20 +11,31 @@ the property the whole method leans on.
 """
 
 from __future__ import annotations
+from random_indexing.config import SEED
 
 import numpy as np
 
 
-def make_index_vector(dim: int, num_nonzeros: int, rng: np.random.Generator) -> np.ndarray:
+def make_index_vector(
+    dim: int, num_nonzeros: int, rng: np.random.Generator
+) -> np.ndarray:
     """Generate a single sparse ternary random index vector of length `dim`.
 
-    TODO:
-    - pick `num_nonzeros` distinct positions in [0, dim) without replacement
-    - assign each a value of +1 or -1 uniformly at random
-    - return a dense np.ndarray (or a sparse vector, if memory becomes an issue
-      once this is applied beyond the 1400 Cranfield documents)
+    - `num_nonzeros` distinct positions in [0, dim), without replacement
+    - each assigned +1 or -1 uniformly at random
+    - returned as a dense np.ndarray
     """
-    raise NotImplementedError
+    # create vector
+    zero_vector = np.zeros(shape=dim, dtype=np.float32)
+    # pick uniqueu indexes without replacement
+    choice = rng.choice(dim, size=num_nonzeros, replace=False)
+    # create -1.0 and 1.0 distirbution
+    # From paper.  all zero mean distributions with unit variance
+    dist = rng.choice([-1.0, 1.0], size=num_nonzeros, replace=True)
+
+    # assign distribution to zero vector
+    zero_vector[choice] = dist
+    return zero_vector
 
 
 def build_index_vectors(
@@ -35,9 +46,7 @@ def build_index_vectors(
 ) -> dict[int, np.ndarray]:
     """Generate one index vector per context id (e.g. per document id).
 
-    TODO:
-    - seed a single np.random.Generator so the whole run is reproducible
-    - call make_index_vector once per id in `context_ids`
     - return {context_id: index_vector}
     """
-    raise NotImplementedError
+    random_generator = np.random.default_rng(seed)
+    return {context_id: make_index_vector(dim=dim, num_nonzeros=num_nonzeros, rng=random_generator) for context_id in context_ids}

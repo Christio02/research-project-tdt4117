@@ -19,7 +19,9 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     raise NotImplementedError
 
 
-def nearest_terms(term: str, context_vectors: dict[str, np.ndarray], top_k: int = 10) -> list[tuple[str, float]]:
+def nearest_terms(
+    term: str, context_vectors: dict[str, np.ndarray], top_k: int = 10
+) -> list[tuple[str, float]]:
     """Rank all other terms by cosine similarity to `term`'s context vector.
 
     TODO:
@@ -62,3 +64,5 @@ def ri_retrieve(
       shape of Assignment 1's tfidf_retrieve for easy comparison
     """
     raise NotImplementedError
+
+
