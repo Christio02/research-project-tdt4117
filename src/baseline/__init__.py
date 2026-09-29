@@ -14,6 +14,7 @@ from baseline.tfidf import (
     build_tfidf_matrix,
     compute_doc_norms,
     term_freq,
+    tfidf_retrieve,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "build_idf",
     "build_tfidf_matrix",
     "compute_doc_norms",
+    "tfidf_retrieve",
 ]

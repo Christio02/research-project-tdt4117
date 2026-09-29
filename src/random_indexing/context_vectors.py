@@ -22,7 +22,7 @@ def build_context_vectors(
     index_vectors: dict[int, np.ndarray],
     dim: int,
     weighted: bool = False,
-    tfidf_matrix: dict[int, dict[str, float]] | None = None
+    tfidf_matrix: dict[int, dict[str, float]] | None = None,
 ) -> dict[str, np.ndarray]:
     """Accumulate one context vector per unique term across the corpus.
 
@@ -32,10 +32,9 @@ def build_context_vectors(
     """
 
     context_vectors = {}
-    for doc in docs:
-        inner_dict = docs[doc]
+    for doc, value in docs.items():
+        inner_dict = value
         terms = inner_dict["terms"]
-
         for term in terms:
             count = 0
 

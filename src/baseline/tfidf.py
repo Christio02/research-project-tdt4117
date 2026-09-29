@@ -53,3 +53,32 @@ def compute_doc_norms(tfidf_matrix: dict[int, dict[str, float]]) -> dict[int, fl
         norm = math.sqrt(sum(w * w for w in weights.values()))
         norms[doc_id] = norm if norm > 0 else 1e-12
     return norms
+
+
+def tfidf_retrieve(
+    query: str,
+    idf: dict[str, float],
+    doc_vectors: dict[int, dict[str, float]],
+    doc_norms: dict[int, float],
+) -> list[tuple[int, float]]:
+    """Rank documents for `query` using baseline TF-IDF cosine similarity."""
+    q_tokens = tokenize(query)
+    q_freq: dict[str, int] = {}
+    for t in q_tokens:
+        q_freq[t] = q_freq.get(t, 0) + 1
+
+    q_weights = {t: f * idf[t] for t, f in q_freq.items() if t in idf}
+    q_norm = math.sqrt(sum(w * w for w in q_weights.values()))
+    if q_norm == 0:
+        return []
+
+    scores = []
+    for doc_id, weights in doc_vectors.items():
+        dot = sum(qw * weights[t] for t, qw in q_weights.items() if t in weights)
+        if dot == 0.0:
+            continue
+        sim = dot / (q_norm * doc_norms[doc_id])
+        scores.append((doc_id, float(sim)))
+
+    scores.sort(key=lambda x: x[1], reverse=True)
+    return scores
