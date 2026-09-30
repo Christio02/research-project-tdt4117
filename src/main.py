@@ -21,7 +21,12 @@ from baseline import (
 )
 from random_indexing.config import DIMENSIONS, NUM_NONZEROS, SEED
 from random_indexing.context_vectors import build_context_vectors
-from random_indexing.evaluate import compare_top_k, estimate_memory_bytes
+from random_indexing.evaluate import (
+    compare_top_k,
+    estimate_memory_bytes,
+    precision_at_k,
+    recall_at_k,
+)
 from random_indexing.index_vectors import build_index_vectors
 from random_indexing.retrieval import (
     build_document_vectors,
@@ -42,6 +47,43 @@ TEST_QUERIES = [
     "wing tip vortices",
     "propulsion efficiency",
 ]
+
+
+def parse_cran_queries(path: str = "data/cran.qry") -> dict[int, str]:
+    """Parse queries from cran.qry into {query_id: query_text}."""
+    queries: dict[int, str] = {}
+    current_id = None
+    buf: list[str] = []
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            line = line.rstrip()
+            if line.startswith(".I "):
+                if current_id is not None:
+                    queries[current_id] = " ".join(buf).strip()
+                current_id = int(line.split()[1])
+                buf = []
+            elif line.startswith("."):
+                continue
+            else:
+                buf.append(line)
+        if current_id is not None:
+            queries[current_id] = " ".join(buf).strip()
+    return queries
+
+
+def parse_cranqrel(path: str = "data/cranqrel") -> dict[int, set[int]]:
+    """Parse relevance judgments from cranqrel into {query_id: set_of_relevant_doc_ids}."""
+    qrels: dict[int, set[int]] = {}
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            parts = line.strip().split()
+            if len(parts) >= 2:
+                qid = int(parts[0])
+                doc_id = int(parts[1])
+                grade = int(parts[2]) if len(parts) >= 3 else 1
+                if grade in (1, 2, 3, 4):
+                    qrels.setdefault(qid, set()).add(doc_id)
+    return qrels
 
 
 def print_separator(title: str = "") -> None:
@@ -135,9 +177,9 @@ def main() -> None:
     comparison = compare_top_k(ri_results, tfidf_results, k=5)
 
     print(
-        f"  {'Query ID':8s} | {'Query String':45s} | {'Overlap':7s} | {'RI Top-5 Docs':20s} | {'TF-IDF Top-5 Docs'}"
+        f"  {'Query ID':8s} | {'Query String':40s} | {'Overlap':7s} | {'Rel. P@5':8s} | {'RI Top-5 Docs':20s} | {'TF-IDF Top-5 Docs'}"
     )
-    print("  " + "-" * 115)
+    print("  " + "-" * 120)
 
     total_overlap = 0
     for i, q in enumerate(TEST_QUERIES, 1):
@@ -145,19 +187,81 @@ def main() -> None:
         comp = comparison[qid]
         overlap_count = comp["overlap"]
         total_overlap += overlap_count
+        rel_p = overlap_count / 5.0
 
         ri_top_ids = [d for d, _ in ri_results[qid][:5]]
         tf_top_ids = [d for d, _ in tfidf_results[qid][:5]]
 
         print(
-            f"  {qid:8s} | {q[:45]:45s} | {overlap_count}/5     | "
+            f"  {qid:8s} | {q[:40]:40s} | {overlap_count}/5     | {rel_p * 100:5.1f}%   | "
             f"{ri_top_ids!s:20s} | {tf_top_ids!s}"
         )
 
     avg_overlap = total_overlap / len(TEST_QUERIES)
-    print("  " + "-" * 115)
+    print("  " + "-" * 120)
     print(
-        f"  Average Top-5 Overlap: {avg_overlap:.2f} / 5 documents ({avg_overlap * 20:.1f}%)"
+        f"  Average Agreement with TF-IDF: {avg_overlap:.2f} / 5 documents ({avg_overlap * 20:.1f}%)"
+    )
+
+    # Experiment 3b: Ground-Truth Precision & Recall on Cranfield Benchmark (cranqrel)
+    print_separator("Experiment 3b: Ground-Truth Precision & Recall (Cranfield Benchmark)")
+    cran_queries = parse_cran_queries()
+    qrels = parse_cranqrel()
+    k_eval = 5
+
+    ri_prec_list, ri_rec_list = [], []
+    tf_prec_list, tf_rec_list = [], []
+
+    print(
+        f"  Evaluating first 10 Cranfield benchmark queries with human relevance judgments (k={k_eval}):\n"
+    )
+    print(
+        f"  {'QID':5s} | {'Relevant':8s} | {'RI P@5':8s} | {'RI R@5':8s} | {'TF-IDF P@5':10s} | {'TF-IDF R@5':10s} | Query Snippet"
+    )
+    print("  " + "-" * 110)
+
+    eval_count = 0
+    for qid in sorted(cran_queries.keys()):
+        if qid not in qrels or len(qrels[qid]) == 0:
+            continue
+        if eval_count >= 10:
+            break
+
+        qtext = cran_queries[qid]
+        rel_set = qrels[qid]
+
+        ri_res_b = ri_retrieve(
+            qtext, context_vectors, doc_vectors_add, method="additive"
+        )
+        tf_res_b = tfidf_retrieve(qtext, idf, tfidf_matrix, doc_norms)
+
+        ri_p = precision_at_k(ri_res_b, rel_set, k=k_eval)
+        ri_r = recall_at_k(ri_res_b, rel_set, k=k_eval)
+        tf_p = precision_at_k(tf_res_b, rel_set, k=k_eval)
+        tf_r = recall_at_k(tf_res_b, rel_set, k=k_eval)
+
+        ri_prec_list.append(ri_p)
+        ri_rec_list.append(ri_r)
+        tf_prec_list.append(tf_p)
+        tf_rec_list.append(tf_r)
+
+        print(
+            f"  Q{qid:03d} | {len(rel_set):5d}    | {ri_p * 100:5.1f}%  | {ri_r * 100:5.1f}%  | "
+            f"{tf_p * 100:7.1f}%  | {tf_r * 100:7.1f}%  | {qtext[:40]}..."
+        )
+        eval_count += 1
+
+    mean_ri_p = sum(ri_prec_list) / len(ri_prec_list)
+    mean_ri_r = sum(ri_rec_list) / len(ri_rec_list)
+    mean_tf_p = sum(tf_prec_list) / len(tf_prec_list)
+    mean_tf_r = sum(tf_rec_list) / len(tf_rec_list)
+
+    print("  " + "-" * 110)
+    print(
+        f"  Random Indexing: Mean P@5 = {mean_ri_p * 100:.1f}% | Mean R@5 = {mean_ri_r * 100:.1f}%"
+    )
+    print(
+        f"  Baseline TF-IDF: Mean P@5 = {mean_tf_p * 100:.1f}% | Mean R@5 = {mean_tf_r * 100:.1f}%"
     )
 
     # Experiment 4: Vocabulary Mismatch Case Study

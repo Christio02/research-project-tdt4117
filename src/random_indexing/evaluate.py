@@ -97,3 +97,31 @@ def estimate_memory_bytes(
         "ri_float64": vocab_size * dimensions * 8,
         "tfidf_dense": num_docs * vocab_size * 8,
     }
+
+
+def precision_at_k(
+    retrieved: list[tuple[int, float]] | list[int],
+    relevant: set[int] | list[int],
+    k: int = 5,
+) -> float:
+    """Compute Precision@k: fraction of top-k retrieved documents that are relevant."""
+    if k <= 0:
+        return 0.0
+    top_k_ids = [d[0] if isinstance(d, tuple) else d for d in retrieved[:k]]
+    rel_set = set(relevant)
+    hits = sum(1 for doc_id in top_k_ids if doc_id in rel_set)
+    return hits / k
+
+
+def recall_at_k(
+    retrieved: list[tuple[int, float]] | list[int],
+    relevant: set[int] | list[int],
+    k: int = 5,
+) -> float:
+    """Compute Recall@k: fraction of all relevant documents found in top-k."""
+    rel_set = set(relevant)
+    if not rel_set or k <= 0:
+        return 0.0
+    top_k_ids = [d[0] if isinstance(d, tuple) else d for d in retrieved[:k]]
+    hits = sum(1 for doc_id in top_k_ids if doc_id in rel_set)
+    return hits / len(rel_set)
